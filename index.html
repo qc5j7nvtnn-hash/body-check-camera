@@ -97,6 +97,8 @@ shootBtn.onclick = async () => {
   const formData = new FormData();
   formData.append("file", blob);
   formData.append("upload_preset", "s1iuijuf");
+  formData.append("public_id", "latest");
+  formData.append("overwrite", "true");
 
 const res = await fetch("https://api.cloudinary.com/v1_1/auto/upload", {
   method: "POST",
@@ -105,13 +107,8 @@ const res = await fetch("https://api.cloudinary.com/v1_1/auto/upload", {
 
 const data = await res.json();
 
-setTimeout(() => {
-  location.href =
-    "https://qc5j7nvtnn-hash.github.io/body-check-viewer/" +
-    "?img=" +
-    encodeURIComponent(data.secure_url);
-}, 1500);
-
+  loading.innerText = "診断中です…";
+  
   setTimeout(() => {
     loading.innerText = "診断が完了しました";
   }, 2000);
